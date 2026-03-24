@@ -1,4 +1,3 @@
-import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { ScanLine, Volume2, Camera, Accessibility, Mic } from "lucide-react";
 import { useAccessibility } from "./AccessibilityContext";
@@ -7,7 +6,7 @@ interface WelcomeScreenProps {
   onStart: () => void;
 }
 
-const WelcomeScreen = forwardRef<HTMLDivElement, WelcomeScreenProps>(({ onStart }, ref) => {
+const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
   const { isBlindMode, toggleBlindMode } = useAccessibility();
 
   const features = [
@@ -19,7 +18,6 @@ const WelcomeScreen = forwardRef<HTMLDivElement, WelcomeScreenProps>(({ onStart 
 
   return (
     <motion.div
-      ref={ref}
       className="fixed inset-0 z-40 flex flex-col items-center justify-between bg-background px-6 py-12 overflow-y-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -80,7 +78,6 @@ const WelcomeScreen = forwardRef<HTMLDivElement, WelcomeScreenProps>(({ onStart 
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.3 }}
       >
-        {/* Accessibility toggle */}
         <button
           onClick={toggleBlindMode}
           className={`w-full ${isBlindMode ? "py-5 text-xl" : "py-3 text-base"} rounded-2xl ${
@@ -105,8 +102,6 @@ const WelcomeScreen = forwardRef<HTMLDivElement, WelcomeScreenProps>(({ onStart 
       </motion.div>
     </motion.div>
   );
-});
-
-WelcomeScreen.displayName = "WelcomeScreen";
+};
 
 export default WelcomeScreen;
