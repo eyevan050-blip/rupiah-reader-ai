@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera,
   SwitchCamera,
-  Flashlight,
   Volume2,
   VolumeX,
   RotateCcw,
   Upload,
+  Loader2,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import BoundingBox from "./BoundingBox";
 import TotalDisplay from "./TotalDisplay";
 
@@ -31,27 +32,9 @@ const NOMINAL_MAP: Record<string, number> = {
   "100k": 100000,
 };
 
-const DEMO_SCENARIOS: Detection[][] = [
-  [
-    { label: "10k", confidence: 93, x: 15, y: 20, width: 35, height: 25 },
-    { label: "5k", confidence: 88, x: 55, y: 45, width: 30, height: 22 },
-  ],
-  [
-    { label: "50k", confidence: 96, x: 20, y: 30, width: 40, height: 28 },
-  ],
-  [
-    { label: "100k", confidence: 91, x: 10, y: 15, width: 38, height: 26 },
-    { label: "20k", confidence: 89, x: 52, y: 50, width: 32, height: 24 },
-    { label: "2k", confidence: 86, x: 30, y: 70, width: 25, height: 18 },
-  ],
-  [
-    { label: "1k", confidence: 92, x: 25, y: 35, width: 30, height: 22 },
-    { label: "100k", confidence: 95, x: 58, y: 25, width: 35, height: 26 },
-  ],
-];
-
 const CameraView = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [ttsEnabled, setTtsEnabled] = useState(true);
@@ -60,7 +43,7 @@ const CameraView = () => {
   const [hasDetected, setHasDetected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const scenarioRef = useRef(0);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const startCamera = useCallback(async (facing: "user" | "environment") => {
     try {
@@ -109,27 +92,113 @@ const CameraView = () => {
   };
 
   const formatRupiah = (value: number) => {
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value);
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(value);
   };
 
-  const handleCapture = () => {
-    if (hasDetected) return;
+  const captureFrame = (): string | null => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return null;
+
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.8);
+  };
+
+  const detectWithAI = async (imageData: string) => {
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("detect-currency", {
+        body: { image: imageData },
+      });
+
+      if (fnError) {
+        throw new Error(fnError.message || "Detection failed");
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      return (data?.detections || []) as Detection[];
+    } catch (err) {
+      console.error("AI detection error:", err);
+      throw err;
+    }
+  };
+
+  const handleCapture = async () => {
+    if (hasDetected || isScanning) return;
     setIsScanning(true);
     setIsDetecting(true);
+    setAiError(null);
 
-    // Simulate detection after a short delay
-    setTimeout(() => {
-      const scenario = DEMO_SCENARIOS[scenarioRef.current % DEMO_SCENARIOS.length];
-      scenarioRef.current++;
-      setDetections(scenario);
-      setHasDetected(true);
+    const imageData = captureFrame();
+    if (!imageData) {
       setIsScanning(false);
       setIsDetecting(false);
+      setAiError("Gagal mengambil gambar dari kamera");
+      return;
+    }
 
-      const total = scenario.reduce((sum, d) => sum + (NOMINAL_MAP[d.label] || 0), 0);
-      const formatted = formatRupiah(total);
-      speak(`Terdeteksi uang sejumlah ${formatted}`);
-    }, 2000);
+    try {
+      const results = await detectWithAI(imageData);
+      setDetections(results);
+      setHasDetected(true);
+
+      if (results.length > 0) {
+        const total = results.reduce((sum, d) => sum + (NOMINAL_MAP[d.label] || 0), 0);
+        const formatted = formatRupiah(total);
+        speak(`Terdeteksi uang sejumlah ${formatted}`);
+      } else {
+        speak("Tidak ada uang yang terdeteksi");
+      }
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Deteksi gagal");
+    } finally {
+      setIsScanning(false);
+      setIsDetecting(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsScanning(true);
+    setIsDetecting(true);
+    setAiError(null);
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const imageData = reader.result as string;
+      try {
+        const results = await detectWithAI(imageData);
+        setDetections(results);
+        setHasDetected(true);
+
+        if (results.length > 0) {
+          const total = results.reduce((sum, d) => sum + (NOMINAL_MAP[d.label] || 0), 0);
+          const formatted = formatRupiah(total);
+          speak(`Terdeteksi uang sejumlah ${formatted}`);
+        } else {
+          speak("Tidak ada uang yang terdeteksi");
+        }
+      } catch (err) {
+        setAiError(err instanceof Error ? err.message : "Deteksi gagal");
+      } finally {
+        setIsScanning(false);
+        setIsDetecting(false);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleReset = () => {
@@ -137,14 +206,8 @@ const CameraView = () => {
     setHasDetected(false);
     setIsDetecting(false);
     setIsScanning(false);
+    setAiError(null);
     window.speechSynthesis.cancel();
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    // Simulate detection on uploaded image
-    handleCapture();
   };
 
   if (error) {
@@ -169,6 +232,9 @@ const CameraView = () => {
 
   return (
     <div className="fixed inset-0 bg-camera-bg">
+      {/* Hidden canvas for frame capture */}
+      <canvas ref={canvasRef} className="hidden" />
+
       {/* Video Feed */}
       <video
         ref={videoRef}
@@ -213,12 +279,38 @@ const CameraView = () => {
             exit={{ opacity: 0, y: -20 }}
           >
             <p className="text-primary-foreground text-sm font-semibold flex items-center gap-2">
-              <motion.span
-                className="w-2 h-2 rounded-full bg-primary-foreground"
-                animate={{ opacity: [1, 0.3, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              />
+              <Loader2 className="w-4 h-4 animate-spin" />
               Sedang mendeteksi...
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* AI Error */}
+      <AnimatePresence>
+        {aiError && (
+          <motion.div
+            className="absolute top-20 left-4 right-4 z-30 px-4 py-3 rounded-xl bg-destructive/90 backdrop-blur-sm"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <p className="text-destructive-foreground text-sm font-medium">{aiError}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* No detection result */}
+      <AnimatePresence>
+        {hasDetected && detections.length === 0 && !aiError && (
+          <motion.div
+            className="absolute top-20 left-4 right-4 z-30 px-4 py-3 rounded-xl bg-muted/90 backdrop-blur-sm"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <p className="text-foreground text-sm font-medium text-center">
+              Tidak ada uang Rupiah yang terdeteksi. Coba arahkan kamera ke uang kertas.
             </p>
           </motion.div>
         )}
@@ -278,7 +370,11 @@ const CameraView = () => {
               className="relative flex flex-col items-center"
             >
               <div className="w-20 h-20 rounded-full border-4 border-primary flex items-center justify-center bg-primary/20 backdrop-blur-sm active:scale-90 transition-transform">
-                <div className="w-14 h-14 rounded-full bg-primary" />
+                {isScanning ? (
+                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-primary" />
+                )}
               </div>
               <span className="text-primary-foreground text-xs font-semibold mt-2 tracking-wide">
                 {isScanning ? "MENDETEKSI..." : "KETUK UNTUK FOTO"}
