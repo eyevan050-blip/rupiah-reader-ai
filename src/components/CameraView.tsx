@@ -18,6 +18,7 @@ import { useHaptic } from "@/hooks/useHaptic";
 import useVoiceCommands from "@/hooks/useVoiceCommands";
 import BoundingBox from "./BoundingBox";
 import TotalDisplay from "./TotalDisplay";
+import logoMataHati from "@/assets/logo-mata-hati.jpeg";
 
 interface Detection {
   label: string;
@@ -396,10 +397,10 @@ const CameraView = () => {
       {/* Top Controls */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-12 pb-4">
         <div className="flex items-center gap-2">
-          <div className={`diamond-shape ${sz.logoSize} bg-primary flex items-center justify-center`}>
-            <span className={`font-display font-bold ${sz.logoText} text-primary-foreground`}>Rp</span>
+          <div className={`${sz.logoSize} rounded-lg overflow-hidden`}>
+            <img src={logoMataHati} alt="Mata Hati" className="w-full h-full object-cover" />
           </div>
-          <span className={`text-primary-foreground font-display font-bold ${sz.brandText}`}>NETRA RUPIAH</span>
+          <span className={`text-primary-foreground font-display font-bold ${sz.brandText}`}>MATA HATI</span>
         </div>
         <div className="flex items-center gap-2">
           {isBlindMode && (
