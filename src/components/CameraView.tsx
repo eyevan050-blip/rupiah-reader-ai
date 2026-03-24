@@ -38,7 +38,7 @@ const NOMINAL_MAP: Record<string, number> = {
   "100k": 100000,
 };
 
-const CameraView = () => {
+const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -53,6 +53,7 @@ const CameraView = () => {
   const [voiceActive, setVoiceActive] = useState(false);
 
   const { isBlindMode, toggleBlindMode, speak: accessibilitySpeak } = useAccessibility();
+  const haptic = useHaptic();
 
   // Size classes based on blind mode
   const sz = isBlindMode
