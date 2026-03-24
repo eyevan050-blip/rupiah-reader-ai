@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import logoMataHati from "@/assets/logo-mata-hati.jpeg";
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -31,19 +32,15 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
         />
       </div>
 
-      {/* Diamond Logo */}
+      {/* Logo */}
       <motion.div
         className="relative"
         initial={{ scale: 0, rotate: -45 }}
         animate={{ scale: 1, rotate: 0 }}
         transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
       >
-        <div className="diamond-shape w-28 h-28 bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center">
-          <div className="diamond-shape w-24 h-24 bg-primary-foreground flex items-center justify-center">
-            <span className="font-display font-black text-2xl text-primary" style={{ transform: "rotate(0deg)" }}>
-              Rp
-            </span>
-          </div>
+        <div className="w-28 h-28 rounded-2xl overflow-hidden shadow-2xl border-2 border-primary-foreground/30">
+          <img src={logoMataHati} alt="Mata Hati Logo" className="w-full h-full object-cover" />
         </div>
       </motion.div>
 
@@ -55,7 +52,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
         transition={{ delay: 0.8, duration: 0.6 }}
       >
         <h1 className="font-display font-black text-3xl tracking-wider text-primary-foreground text-shadow-glow">
-          NETRA RUPIAH
+          MATA HATI
         </h1>
         <motion.p
           className="text-primary-foreground/70 text-sm mt-2 font-medium tracking-wide"

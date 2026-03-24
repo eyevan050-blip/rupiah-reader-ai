@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ScanLine, Volume2, Camera, Accessibility, Mic } from "lucide-react";
 import { useAccessibility } from "./AccessibilityContext";
+import logoMataHati from "@/assets/logo-mata-hati.jpeg";
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -31,8 +32,8 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
           className="mb-8"
         >
-          <div className={`diamond-shape ${isBlindMode ? "w-28 h-28" : "w-20 h-20"} bg-primary flex items-center justify-center`}>
-            <span className={`font-display font-black ${isBlindMode ? "text-3xl" : "text-xl"} text-primary-foreground`}>Rp</span>
+          <div className={`${isBlindMode ? "w-28 h-28" : "w-20 h-20"} rounded-2xl overflow-hidden shadow-lg`}>
+            <img src={logoMataHati} alt="Mata Hati Logo" className="w-full h-full object-cover" />
           </div>
         </motion.div>
 
@@ -42,7 +43,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          Selamat Datang di <span className="text-primary">Netra Rupiah</span>
+          Selamat Datang di <span className="text-primary">Mata Hati</span>
         </motion.h1>
 
         <motion.p
