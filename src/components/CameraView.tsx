@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera,
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccessibility } from "./AccessibilityContext";
+import { useHaptic } from "@/hooks/useHaptic";
 import useVoiceCommands from "@/hooks/useVoiceCommands";
 import BoundingBox from "./BoundingBox";
 import TotalDisplay from "./TotalDisplay";
@@ -37,7 +38,7 @@ const NOMINAL_MAP: Record<string, number> = {
   "100k": 100000,
 };
 
-const CameraView = () => {
+const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -52,6 +53,7 @@ const CameraView = () => {
   const [voiceActive, setVoiceActive] = useState(false);
 
   const { isBlindMode, toggleBlindMode, speak: accessibilitySpeak } = useAccessibility();
+  const haptic = useHaptic();
 
   // Size classes based on blind mode
   const sz = isBlindMode
@@ -158,6 +160,7 @@ const CameraView = () => {
 
   const handleCapture = useCallback(async () => {
     if (hasDetected || isScanning) return;
+    haptic("tap");
     setIsScanning(true);
     setIsDetecting(true);
     setAiError(null);
@@ -169,6 +172,7 @@ const CameraView = () => {
       setIsScanning(false);
       setIsDetecting(false);
       setAiError("Gagal mengambil gambar dari kamera");
+      haptic("error");
       if (isBlindMode) speak("Gagal mengambil gambar");
       return;
     }
@@ -178,29 +182,32 @@ const CameraView = () => {
       setDetections(results);
       setHasDetected(true);
       if (results.length > 0) {
+        haptic("detection");
         const total = results.reduce((sum, d) => sum + (NOMINAL_MAP[d.label] || 0), 0);
         const formatted = formatRupiah(total);
         speak(`Terdeteksi uang sejumlah ${formatted}`);
         if (isBlindMode) {
-          // Detail each bill
           setTimeout(() => {
+            haptic("success");
             const detail = results.map((d) => `${d.label.replace("k", " ribu")} rupiah`).join(", ");
             speak(`Rincian: ${detail}`);
           }, 3000);
         }
       } else {
+        haptic("error");
         speak("Tidak ada uang yang terdeteksi");
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Deteksi gagal";
       setAiError(msg);
+      haptic("error");
       if (isBlindMode) speak(`Error: ${msg}`);
     } finally {
       setIsScanning(false);
       setIsDetecting(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasDetected, isScanning, isBlindMode, speak]);
+  }, [hasDetected, isScanning, isBlindMode, speak, haptic]);
 
   const handleReset = useCallback(() => {
     setDetections([]);
@@ -306,7 +313,7 @@ const CameraView = () => {
   }
 
   return (
-    <div className="fixed inset-0 bg-camera-bg">
+    <div ref={ref} className="fixed inset-0 bg-camera-bg touch-manipulation">
       <canvas ref={canvasRef} className="hidden" />
 
       <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
@@ -533,6 +540,8 @@ const CameraView = () => {
       </div>
     </div>
   );
-};
+});
+
+CameraView.displayName = "CameraView";
 
 export default CameraView;

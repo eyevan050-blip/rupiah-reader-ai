@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { ScanLine, Volume2, Camera, Accessibility, Mic } from "lucide-react";
 import { useAccessibility } from "./AccessibilityContext";
@@ -6,7 +7,7 @@ interface WelcomeScreenProps {
   onStart: () => void;
 }
 
-const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
+const WelcomeScreen = forwardRef<HTMLDivElement, WelcomeScreenProps>(({ onStart }, ref) => {
   const { isBlindMode, toggleBlindMode } = useAccessibility();
 
   const features = [
@@ -18,13 +19,14 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
 
   return (
     <motion.div
-      className="fixed inset-0 z-40 flex flex-col items-center justify-between bg-background px-6 py-12"
+      ref={ref}
+      className="fixed inset-0 z-40 flex flex-col items-center justify-between bg-background px-6 py-12 overflow-y-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, x: -100 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="flex-1 flex flex-col items-center justify-center max-w-sm">
+      <div className="flex-1 flex flex-col items-center justify-center max-w-sm w-full">
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -73,7 +75,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
       </div>
 
       <motion.div
-        className="w-full max-w-sm space-y-3"
+        className="w-full max-w-sm space-y-3 mt-6"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.3 }}
@@ -85,7 +87,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
             isBlindMode
               ? "bg-accent text-accent-foreground"
               : "bg-secondary text-secondary-foreground border border-border"
-          } font-display font-bold tracking-wide flex items-center justify-center gap-3 active:scale-95 transition-transform`}
+          } font-display font-bold tracking-wide flex items-center justify-center gap-3 active:scale-95 transition-transform touch-manipulation`}
         >
           <Accessibility className={isBlindMode ? "w-7 h-7" : "w-5 h-5"} />
           {isBlindMode ? "MODE AKSESIBILITAS AKTIF ✓" : "AKTIFKAN MODE AKSESIBILITAS"}
@@ -93,7 +95,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
 
         <button
           onClick={onStart}
-          className={`w-full ${isBlindMode ? "py-6 text-2xl" : "py-4 text-lg"} rounded-2xl bg-primary text-primary-foreground font-display font-bold tracking-wide shadow-lg shadow-primary/30 active:scale-95 transition-transform`}
+          className={`w-full ${isBlindMode ? "py-6 text-2xl" : "py-4 text-lg"} rounded-2xl bg-primary text-primary-foreground font-display font-bold tracking-wide shadow-lg shadow-primary/30 active:scale-95 transition-transform touch-manipulation`}
         >
           MULAI SEKARANG
         </button>
@@ -103,6 +105,8 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
       </motion.div>
     </motion.div>
   );
-};
+});
+
+WelcomeScreen.displayName = "WelcomeScreen";
 
 export default WelcomeScreen;
