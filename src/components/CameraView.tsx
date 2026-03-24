@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera,
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccessibility } from "./AccessibilityContext";
+import { useHaptic } from "@/hooks/useHaptic";
 import useVoiceCommands from "@/hooks/useVoiceCommands";
 import BoundingBox from "./BoundingBox";
 import TotalDisplay from "./TotalDisplay";
