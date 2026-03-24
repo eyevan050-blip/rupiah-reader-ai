@@ -207,7 +207,7 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
       setIsDetecting(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasDetected, isScanning, isBlindMode, speak]);
+  }, [hasDetected, isScanning, isBlindMode, speak, haptic]);
 
   const handleReset = useCallback(() => {
     setDetections([]);
