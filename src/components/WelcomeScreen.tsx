@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
-import { ScanLine, Volume2, Camera, Accessibility, Mic } from "lucide-react";
-import { useAccessibility } from "./AccessibilityContext";
+import { ScanLine, Volume2, Camera, Mic } from "lucide-react";
 import logoMataHati from "@/assets/logo-mata-hati.jpeg";
 
 interface WelcomeScreenProps {
@@ -8,7 +7,6 @@ interface WelcomeScreenProps {
 }
 
 const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
-  const { isBlindMode, toggleBlindMode } = useAccessibility();
 
   const features = [
     { icon: Camera, text: "Deteksi uang kertas Rupiah secara real-time" },
@@ -80,25 +78,13 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
         transition={{ delay: 1.3 }}
       >
         <button
-          onClick={toggleBlindMode}
-          className={`w-full ${isBlindMode ? "py-5 text-xl" : "py-3 text-base"} rounded-2xl ${
-            isBlindMode
-              ? "bg-accent text-accent-foreground"
-              : "bg-secondary text-secondary-foreground border border-border"
-          } font-display font-bold tracking-wide flex items-center justify-center gap-3 active:scale-95 transition-transform touch-manipulation`}
-        >
-          <Accessibility className={isBlindMode ? "w-7 h-7" : "w-5 h-5"} />
-          {isBlindMode ? "MODE AKSESIBILITAS AKTIF ✓" : "AKTIFKAN MODE AKSESIBILITAS"}
-        </button>
-
-        <button
           onClick={onStart}
-          className={`w-full ${isBlindMode ? "py-6 text-2xl" : "py-4 text-lg"} rounded-2xl bg-primary text-primary-foreground font-display font-bold tracking-wide shadow-lg shadow-primary/30 active:scale-95 transition-transform touch-manipulation`}
+          className="w-full py-6 text-2xl rounded-2xl bg-primary text-primary-foreground font-display font-bold tracking-wide shadow-lg shadow-primary/30 active:scale-95 transition-transform touch-manipulation"
         >
-          MULAI SEKARANG
+          ▶ MULAI SCAN UANG
         </button>
-        <p className={`text-center ${isBlindMode ? "text-base" : "text-xs"} text-muted-foreground mt-3`}>
-          Aplikasi memerlukan akses kamera{isBlindMode ? " dan mikrofon" : ""}
+        <p className="text-center text-xs text-muted-foreground mt-3">
+          Tekan tombol di atas untuk membuka kamera dan mulai mendeteksi uang
         </p>
       </motion.div>
     </motion.div>
