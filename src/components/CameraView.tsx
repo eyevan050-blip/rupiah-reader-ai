@@ -6,7 +6,6 @@ import {
   Volume2,
   VolumeX,
   RotateCcw,
-  Upload,
   Loader2,
   Mic,
   MicOff,
@@ -124,11 +123,20 @@ const CameraView = () => {
 
   const speak = useCallback((text: string) => {
     if (!ttsEnabled) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "id-ID";
-    utterance.rate = isBlindMode ? 0.8 : 0.9;
     window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    // Small delay to let cancel() take effect on mobile
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "id-ID";
+      utterance.rate = isBlindMode ? 0.75 : 0.85;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      // Try to pick an Indonesian voice for smoother output
+      const voices = window.speechSynthesis.getVoices();
+      const idVoice = voices.find((v) => v.lang.startsWith("id"));
+      if (idVoice) utterance.voice = idVoice;
+      window.speechSynthesis.speak(utterance);
+    }, 100);
   }, [ttsEnabled, isBlindMode]);
 
   const calculateTotal = (dets: Detection[]) =>
