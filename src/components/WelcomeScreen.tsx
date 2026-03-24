@@ -30,13 +30,13 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
           className="mb-8"
         >
-          <div className={`${isBlindMode ? "w-28 h-28" : "w-20 h-20"} rounded-2xl overflow-hidden shadow-lg`}>
+          <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-lg">
             <img src={logoMataHati} alt="Mata Hati Logo" className="w-full h-full object-cover" />
           </div>
         </motion.div>
 
         <motion.h1
-          className={`font-display font-bold ${isBlindMode ? "text-4xl" : "text-2xl"} text-foreground text-center mb-3`}
+          className="font-display font-bold text-2xl text-foreground text-center mb-3"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
@@ -45,7 +45,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
         </motion.h1>
 
         <motion.p
-          className={`text-muted-foreground text-center ${isBlindMode ? "text-xl" : "text-base"} leading-relaxed mb-10`}
+          className="text-muted-foreground text-center text-base leading-relaxed mb-10"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
@@ -57,15 +57,15 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           {features.map((feature, i) => (
             <motion.div
               key={i}
-              className={`flex items-center gap-4 ${isBlindMode ? "p-5" : "p-4"} rounded-xl bg-secondary/50 border border-border`}
+              className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50 border border-border"
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.8 + i * 0.15 }}
             >
-              <div className={`${isBlindMode ? "w-14 h-14" : "w-10 h-10"} rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0`}>
-                <feature.icon className={`${isBlindMode ? "w-7 h-7" : "w-5 h-5"} text-primary`} />
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <feature.icon className="w-5 h-5 text-primary" />
               </div>
-              <p className={`${isBlindMode ? "text-lg" : "text-sm"} text-foreground font-medium`}>{feature.text}</p>
+              <p className="text-sm text-foreground font-medium">{feature.text}</p>
             </motion.div>
           ))}
         </div>

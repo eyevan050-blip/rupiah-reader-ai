@@ -302,13 +302,6 @@ const CameraView = () => {
         >
           Coba Lagi
         </button>
-        <label
-          className={`mt-3 px-8 ${isBlindMode ? "py-5 text-xl" : "py-3 text-base"} rounded-xl bg-secondary text-secondary-foreground font-semibold cursor-pointer flex items-center gap-2 touch-manipulation`}
-        >
-          <Upload className="w-5 h-5" />
-          Upload Gambar
-          <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-        </label>
       </div>
     );
   }
@@ -517,13 +510,7 @@ const CameraView = () => {
             </button>
           )}
 
-          <label
-            className={`${sz.sideBtn} rounded-full bg-camera-overlay/60 backdrop-blur-sm flex items-center justify-center cursor-pointer active:scale-90 transition-transform touch-manipulation`}
-            aria-label="Upload gambar"
-          >
-            <Upload className={`${sz.sideBtnIcon} text-primary-foreground`} />
-            <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-          </label>
+          <div className={`${sz.sideBtn} rounded-full`} />
         </div>
       </div>
     </div>
