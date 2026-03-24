@@ -1,14 +1,12 @@
-import { forwardRef } from "react";
 import { motion } from "framer-motion";
 
 interface SplashScreenProps {
   onComplete: () => void;
 }
 
-const SplashScreen = forwardRef<HTMLDivElement, SplashScreenProps>(({ onComplete }, ref) => {
+const SplashScreen = ({ onComplete }: SplashScreenProps) => {
   return (
     <motion.div
-      ref={ref}
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-primary"
       initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
@@ -87,8 +85,6 @@ const SplashScreen = forwardRef<HTMLDivElement, SplashScreenProps>(({ onComplete
       </motion.div>
     </motion.div>
   );
-});
-
-SplashScreen.displayName = "SplashScreen";
+};
 
 export default SplashScreen;

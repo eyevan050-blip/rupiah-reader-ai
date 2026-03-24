@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback, useMemo, forwardRef } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera,
@@ -38,7 +38,7 @@ const NOMINAL_MAP: Record<string, number> = {
   "100k": 100000,
 };
 
-const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
+const CameraView = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -55,7 +55,6 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
   const { isBlindMode, toggleBlindMode, speak: accessibilitySpeak } = useAccessibility();
   const haptic = useHaptic();
 
-  // Size classes based on blind mode
   const sz = isBlindMode
     ? {
         captureBtn: "w-28 h-28",
@@ -235,13 +234,16 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
         setDetections(results);
         setHasDetected(true);
         if (results.length > 0) {
+          haptic("detection");
           const total = results.reduce((sum, d) => sum + (NOMINAL_MAP[d.label] || 0), 0);
           speak(`Terdeteksi uang sejumlah ${formatRupiah(total)}`);
         } else {
+          haptic("error");
           speak("Tidak ada uang yang terdeteksi");
         }
       } catch (err) {
         setAiError(err instanceof Error ? err.message : "Deteksi gagal");
+        haptic("error");
       } finally {
         setIsScanning(false);
         setIsDetecting(false);
@@ -250,7 +252,6 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
     reader.readAsDataURL(file);
   };
 
-  // Voice commands
   const voiceCommands = useMemo(
     () => [
       { keywords: ["foto", "ambil", "capture", "scan", "pindai"], action: () => handleCapture() },
@@ -283,7 +284,6 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
     },
   });
 
-  // Auto-announce on blind mode activation
   useEffect(() => {
     if (isBlindMode) {
       setVoiceActive(true);
@@ -297,12 +297,12 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
         <p className={`text-primary-foreground ${sz.errorText} font-medium mb-2`}>{error}</p>
         <button
           onClick={() => startCamera(facingMode)}
-          className={`mt-4 px-8 ${isBlindMode ? "py-5 text-xl" : "py-3 text-base"} rounded-xl bg-primary text-primary-foreground font-semibold`}
+          className={`mt-4 px-8 ${isBlindMode ? "py-5 text-xl" : "py-3 text-base"} rounded-xl bg-primary text-primary-foreground font-semibold touch-manipulation`}
         >
           Coba Lagi
         </button>
         <label
-          className={`mt-3 px-8 ${isBlindMode ? "py-5 text-xl" : "py-3 text-base"} rounded-xl bg-secondary text-secondary-foreground font-semibold cursor-pointer flex items-center gap-2`}
+          className={`mt-3 px-8 ${isBlindMode ? "py-5 text-xl" : "py-3 text-base"} rounded-xl bg-secondary text-secondary-foreground font-semibold cursor-pointer flex items-center gap-2 touch-manipulation`}
         >
           <Upload className="w-5 h-5" />
           Upload Gambar
@@ -313,17 +313,15 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
   }
 
   return (
-    <div ref={ref} className="fixed inset-0 bg-camera-bg touch-manipulation">
+    <div className="fixed inset-0 bg-camera-bg touch-manipulation">
       <canvas ref={canvasRef} className="hidden" />
 
       <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
 
-      {/* High contrast border for blind mode */}
       {isBlindMode && (
         <div className="absolute inset-0 z-10 pointer-events-none border-4 border-primary rounded-lg" />
       )}
 
-      {/* Dark overlay */}
       <AnimatePresence>
         {(isScanning || hasDetected) && (
           <motion.div
@@ -335,7 +333,6 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
         )}
       </AnimatePresence>
 
-      {/* Scanning line */}
       <AnimatePresence>
         {isScanning && (
           <motion.div
@@ -348,7 +345,6 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
         )}
       </AnimatePresence>
 
-      {/* Status indicator */}
       <AnimatePresence>
         {isScanning && (
           <motion.div
@@ -365,7 +361,6 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
         )}
       </AnimatePresence>
 
-      {/* AI Error */}
       <AnimatePresence>
         {aiError && (
           <motion.div
@@ -379,7 +374,6 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
         )}
       </AnimatePresence>
 
-      {/* No detection */}
       <AnimatePresence>
         {hasDetected && detections.length === 0 && !aiError && (
           <motion.div
@@ -395,7 +389,6 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
         )}
       </AnimatePresence>
 
-      {/* Bounding Boxes */}
       <AnimatePresence>
         {hasDetected && detections.map((det, i) => <BoundingBox key={i} detection={det} isLarge={isBlindMode} />)}
       </AnimatePresence>
@@ -409,14 +402,13 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
           <span className={`text-primary-foreground font-display font-bold ${sz.brandText}`}>NETRA RUPIAH</span>
         </div>
         <div className="flex items-center gap-2">
-          {/* Voice command toggle (blind mode) */}
           {isBlindMode && (
             <button
               onClick={() => {
                 setVoiceActive((prev) => !prev);
                 accessibilitySpeak(voiceActive ? "Perintah suara dimatikan" : "Perintah suara diaktifkan");
               }}
-              className={`${sz.topBtn} rounded-full ${voiceActive ? "bg-accent/80" : "bg-camera-overlay/60"} backdrop-blur-sm flex items-center justify-center`}
+              className={`${sz.topBtn} rounded-full ${voiceActive ? "bg-accent/80" : "bg-camera-overlay/60"} backdrop-blur-sm flex items-center justify-center touch-manipulation`}
               aria-label={voiceActive ? "Matikan perintah suara" : "Aktifkan perintah suara"}
             >
               {voiceActive ? (
@@ -427,19 +419,17 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
             </button>
           )}
 
-          {/* Accessibility toggle */}
           <button
             onClick={toggleBlindMode}
-            className={`${sz.topBtn} rounded-full ${isBlindMode ? "bg-accent/80" : "bg-camera-overlay/60"} backdrop-blur-sm flex items-center justify-center`}
+            className={`${sz.topBtn} rounded-full ${isBlindMode ? "bg-accent/80" : "bg-camera-overlay/60"} backdrop-blur-sm flex items-center justify-center touch-manipulation`}
             aria-label={isBlindMode ? "Nonaktifkan mode aksesibilitas" : "Aktifkan mode aksesibilitas"}
           >
             <Accessibility className={`${sz.topBtnIcon} ${isBlindMode ? "text-accent-foreground" : "text-primary-foreground"}`} />
           </button>
 
-          {/* TTS toggle */}
           <button
             onClick={() => setTtsEnabled(!ttsEnabled)}
-            className={`${sz.topBtn} rounded-full bg-camera-overlay/60 backdrop-blur-sm flex items-center justify-center`}
+            className={`${sz.topBtn} rounded-full bg-camera-overlay/60 backdrop-blur-sm flex items-center justify-center touch-manipulation`}
             aria-label={ttsEnabled ? "Matikan suara" : "Aktifkan suara"}
           >
             {ttsEnabled ? (
@@ -451,7 +441,7 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
         </div>
       </div>
 
-      {/* Voice command hint (blind mode) */}
+      {/* Voice command hint */}
       <AnimatePresence>
         {isBlindMode && voiceActive && !isScanning && !hasDetected && (
           <motion.div
@@ -481,21 +471,19 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
       {/* Bottom Controls */}
       <div className="absolute bottom-0 left-0 right-0 z-30 pb-10 pt-6 px-6">
         <div className="flex items-center justify-around">
-          {/* Switch Camera */}
           <button
             onClick={switchCamera}
-            className={`${sz.sideBtn} rounded-full bg-camera-overlay/60 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform`}
+            className={`${sz.sideBtn} rounded-full bg-camera-overlay/60 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform touch-manipulation`}
             aria-label="Ganti kamera"
           >
             <SwitchCamera className={`${sz.sideBtnIcon} text-primary-foreground`} />
           </button>
 
-          {/* Main Capture / Reset */}
           {!hasDetected ? (
             <button
               onClick={handleCapture}
               disabled={isScanning}
-              className="relative flex flex-col items-center"
+              className="relative flex flex-col items-center touch-manipulation"
               aria-label="Ambil foto untuk deteksi uang"
             >
               <div
@@ -514,7 +502,7 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
           ) : (
             <button
               onClick={handleReset}
-              className="relative flex flex-col items-center"
+              className="relative flex flex-col items-center touch-manipulation"
               aria-label="Ulangi foto"
             >
               <div
@@ -528,9 +516,8 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
             </button>
           )}
 
-          {/* Upload fallback */}
           <label
-            className={`${sz.sideBtn} rounded-full bg-camera-overlay/60 backdrop-blur-sm flex items-center justify-center cursor-pointer active:scale-90 transition-transform`}
+            className={`${sz.sideBtn} rounded-full bg-camera-overlay/60 backdrop-blur-sm flex items-center justify-center cursor-pointer active:scale-90 transition-transform touch-manipulation`}
             aria-label="Upload gambar"
           >
             <Upload className={`${sz.sideBtnIcon} text-primary-foreground`} />
@@ -540,8 +527,6 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
       </div>
     </div>
   );
-});
-
-CameraView.displayName = "CameraView";
+};
 
 export default CameraView;
