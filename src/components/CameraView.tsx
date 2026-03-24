@@ -535,6 +535,8 @@ const CameraView = forwardRef<HTMLDivElement>((_, ref) => {
       </div>
     </div>
   );
-};
+});
+
+CameraView.displayName = "CameraView";
 
 export default CameraView;
