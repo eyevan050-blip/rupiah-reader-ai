@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
-import { ScanLine, Volume2, Camera, Accessibility, Mic } from "lucide-react";
-import { useAccessibility } from "./AccessibilityContext";
+import { ScanLine, Volume2, Camera, Mic } from "lucide-react";
 import logoMataHati from "@/assets/logo-mata-hati.jpeg";
 
 interface WelcomeScreenProps {
@@ -8,7 +7,6 @@ interface WelcomeScreenProps {
 }
 
 const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
-  const { isBlindMode, toggleBlindMode } = useAccessibility();
 
   const features = [
     { icon: Camera, text: "Deteksi uang kertas Rupiah secara real-time" },
@@ -32,13 +30,13 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
           className="mb-8"
         >
-          <div className={`${isBlindMode ? "w-28 h-28" : "w-20 h-20"} rounded-2xl overflow-hidden shadow-lg`}>
+          <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-lg">
             <img src={logoMataHati} alt="Mata Hati Logo" className="w-full h-full object-cover" />
           </div>
         </motion.div>
 
         <motion.h1
-          className={`font-display font-bold ${isBlindMode ? "text-4xl" : "text-2xl"} text-foreground text-center mb-3`}
+          className="font-display font-bold text-2xl text-foreground text-center mb-3"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
@@ -47,7 +45,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
         </motion.h1>
 
         <motion.p
-          className={`text-muted-foreground text-center ${isBlindMode ? "text-xl" : "text-base"} leading-relaxed mb-10`}
+          className="text-muted-foreground text-center text-base leading-relaxed mb-10"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
@@ -59,15 +57,15 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           {features.map((feature, i) => (
             <motion.div
               key={i}
-              className={`flex items-center gap-4 ${isBlindMode ? "p-5" : "p-4"} rounded-xl bg-secondary/50 border border-border`}
+              className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50 border border-border"
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.8 + i * 0.15 }}
             >
-              <div className={`${isBlindMode ? "w-14 h-14" : "w-10 h-10"} rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0`}>
-                <feature.icon className={`${isBlindMode ? "w-7 h-7" : "w-5 h-5"} text-primary`} />
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <feature.icon className="w-5 h-5 text-primary" />
               </div>
-              <p className={`${isBlindMode ? "text-lg" : "text-sm"} text-foreground font-medium`}>{feature.text}</p>
+              <p className="text-sm text-foreground font-medium">{feature.text}</p>
             </motion.div>
           ))}
         </div>
@@ -80,25 +78,13 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
         transition={{ delay: 1.3 }}
       >
         <button
-          onClick={toggleBlindMode}
-          className={`w-full ${isBlindMode ? "py-5 text-xl" : "py-3 text-base"} rounded-2xl ${
-            isBlindMode
-              ? "bg-accent text-accent-foreground"
-              : "bg-secondary text-secondary-foreground border border-border"
-          } font-display font-bold tracking-wide flex items-center justify-center gap-3 active:scale-95 transition-transform touch-manipulation`}
-        >
-          <Accessibility className={isBlindMode ? "w-7 h-7" : "w-5 h-5"} />
-          {isBlindMode ? "MODE AKSESIBILITAS AKTIF ✓" : "AKTIFKAN MODE AKSESIBILITAS"}
-        </button>
-
-        <button
           onClick={onStart}
-          className={`w-full ${isBlindMode ? "py-6 text-2xl" : "py-4 text-lg"} rounded-2xl bg-primary text-primary-foreground font-display font-bold tracking-wide shadow-lg shadow-primary/30 active:scale-95 transition-transform touch-manipulation`}
+          className="w-full py-6 text-2xl rounded-2xl bg-primary text-primary-foreground font-display font-bold tracking-wide shadow-lg shadow-primary/30 active:scale-95 transition-transform touch-manipulation"
         >
-          MULAI SEKARANG
+          ▶ MULAI SCAN UANG
         </button>
-        <p className={`text-center ${isBlindMode ? "text-base" : "text-xs"} text-muted-foreground mt-3`}>
-          Aplikasi memerlukan akses kamera{isBlindMode ? " dan mikrofon" : ""}
+        <p className="text-center text-xs text-muted-foreground mt-3">
+          Tekan tombol di atas untuk membuka kamera dan mulai mendeteksi uang
         </p>
       </motion.div>
     </motion.div>

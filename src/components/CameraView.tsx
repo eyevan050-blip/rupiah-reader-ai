@@ -6,7 +6,6 @@ import {
   Volume2,
   VolumeX,
   RotateCcw,
-  Upload,
   Loader2,
   Mic,
   MicOff,
@@ -124,11 +123,20 @@ const CameraView = () => {
 
   const speak = useCallback((text: string) => {
     if (!ttsEnabled) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "id-ID";
-    utterance.rate = isBlindMode ? 0.8 : 0.9;
     window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    // Small delay to let cancel() take effect on mobile
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "id-ID";
+      utterance.rate = isBlindMode ? 0.75 : 0.85;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      // Try to pick an Indonesian voice for smoother output
+      const voices = window.speechSynthesis.getVoices();
+      const idVoice = voices.find((v) => v.lang.startsWith("id"));
+      if (idVoice) utterance.voice = idVoice;
+      window.speechSynthesis.speak(utterance);
+    }, 100);
   }, [ttsEnabled, isBlindMode]);
 
   const calculateTotal = (dets: Detection[]) =>
@@ -302,13 +310,6 @@ const CameraView = () => {
         >
           Coba Lagi
         </button>
-        <label
-          className={`mt-3 px-8 ${isBlindMode ? "py-5 text-xl" : "py-3 text-base"} rounded-xl bg-secondary text-secondary-foreground font-semibold cursor-pointer flex items-center gap-2 touch-manipulation`}
-        >
-          <Upload className="w-5 h-5" />
-          Upload Gambar
-          <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-        </label>
       </div>
     );
   }
@@ -517,13 +518,7 @@ const CameraView = () => {
             </button>
           )}
 
-          <label
-            className={`${sz.sideBtn} rounded-full bg-camera-overlay/60 backdrop-blur-sm flex items-center justify-center cursor-pointer active:scale-90 transition-transform touch-manipulation`}
-            aria-label="Upload gambar"
-          >
-            <Upload className={`${sz.sideBtnIcon} text-primary-foreground`} />
-            <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-          </label>
+          <div className={`${sz.sideBtn} rounded-full`} />
         </div>
       </div>
     </div>
