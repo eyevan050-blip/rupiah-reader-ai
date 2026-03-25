@@ -1,3 +1,4 @@
+import { useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { ScanLine, Volume2, Camera, Mic } from "lucide-react";
 import logoMataHati from "@/assets/logo-mata-hati.jpeg";
@@ -7,6 +8,35 @@ interface WelcomeScreenProps {
 }
 
 const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
+  const speakWelcome = useCallback(() => {
+    window.speechSynthesis.cancel();
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(
+        "Selamat datang di Mata Hati. Aplikasi pendeteksi uang Rupiah. Tekan tombol Mulai Scan Uang di bagian bawah layar untuk memulai."
+      );
+      utterance.lang = "id-ID";
+      utterance.rate = 0.75;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      const voices = window.speechSynthesis.getVoices();
+      const idVoice = voices.find((v) => v.lang.startsWith("id"));
+      if (idVoice) utterance.voice = idVoice;
+      window.speechSynthesis.speak(utterance);
+    }, 500);
+  }, []);
+
+  useEffect(() => {
+    // Try speaking immediately; if voices aren't loaded yet, wait for them
+    if (window.speechSynthesis.getVoices().length > 0) {
+      speakWelcome();
+    } else {
+      window.speechSynthesis.onvoiceschanged = () => speakWelcome();
+    }
+    return () => {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, [speakWelcome]);
 
   const features = [
     { icon: Camera, text: "Deteksi uang kertas Rupiah secara real-time" },
