@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera,
@@ -7,14 +7,9 @@ import {
   VolumeX,
   RotateCcw,
   Loader2,
-  Mic,
-  MicOff,
-  Accessibility,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAccessibility } from "./AccessibilityContext";
 import { useHaptic } from "@/hooks/useHaptic";
-import useVoiceCommands from "@/hooks/useVoiceCommands";
 import BoundingBox from "./BoundingBox";
 import TotalDisplay from "./TotalDisplay";
 import logoMataHati from "@/assets/logo-mata-hati.jpeg";
@@ -50,42 +45,8 @@ const CameraView = () => {
   const [error, setError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [voiceActive, setVoiceActive] = useState(false);
 
-  const { isBlindMode, toggleBlindMode, speak: accessibilitySpeak } = useAccessibility();
   const haptic = useHaptic();
-
-  const sz = isBlindMode
-    ? {
-        captureBtn: "w-28 h-28",
-        captureBtnInner: "w-20 h-20",
-        sideBtn: "w-16 h-16",
-        sideBtnIcon: "w-7 h-7",
-        topBtn: "w-14 h-14",
-        topBtnIcon: "w-7 h-7",
-        labelText: "text-lg",
-        statusText: "text-lg",
-        errorText: "text-xl",
-        captureLabel: "text-base mt-3",
-        logoSize: "w-10 h-10",
-        logoText: "text-xs",
-        brandText: "text-lg",
-      }
-    : {
-        captureBtn: "w-20 h-20",
-        captureBtnInner: "w-14 h-14",
-        sideBtn: "w-12 h-12",
-        sideBtnIcon: "w-5 h-5",
-        topBtn: "w-10 h-10",
-        topBtnIcon: "w-5 h-5",
-        labelText: "text-sm",
-        statusText: "text-sm",
-        errorText: "text-lg",
-        captureLabel: "text-xs mt-2",
-        logoSize: "w-8 h-8",
-        logoText: "text-[10px]",
-        brandText: "text-sm",
-      };
 
   const startCamera = useCallback(async (facing: "user" | "environment") => {
     try {
@@ -108,6 +69,19 @@ const CameraView = () => {
 
   useEffect(() => {
     startCamera(facingMode);
+    // Speak guidance when camera opens
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(
+        "Kamera sudah terbuka. Arahkan kamera ke uang kertas, lalu tekan tombol bulat besar di tengah bawah layar untuk mengambil foto."
+      );
+      utterance.lang = "id-ID";
+      utterance.rate = 0.75;
+      utterance.volume = 1.0;
+      const voices = window.speechSynthesis.getVoices();
+      const idVoice = voices.find((v) => v.lang.startsWith("id"));
+      if (idVoice) utterance.voice = idVoice;
+      window.speechSynthesis.speak(utterance);
+    }, 1000);
     return () => {
       stream?.getTracks().forEach((t) => t.stop());
     };
@@ -118,26 +92,23 @@ const CameraView = () => {
     const newFacing = facingMode === "user" ? "environment" : "user";
     setFacingMode(newFacing);
     startCamera(newFacing);
-    if (isBlindMode) accessibilitySpeak("Kamera diganti");
-  }, [facingMode, startCamera, isBlindMode, accessibilitySpeak]);
+  }, [facingMode, startCamera]);
 
   const speak = useCallback((text: string) => {
     if (!ttsEnabled) return;
     window.speechSynthesis.cancel();
-    // Small delay to let cancel() take effect on mobile
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "id-ID";
-      utterance.rate = isBlindMode ? 0.75 : 0.85;
+      utterance.rate = 0.75;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
-      // Try to pick an Indonesian voice for smoother output
       const voices = window.speechSynthesis.getVoices();
       const idVoice = voices.find((v) => v.lang.startsWith("id"));
       if (idVoice) utterance.voice = idVoice;
       window.speechSynthesis.speak(utterance);
     }, 100);
-  }, [ttsEnabled, isBlindMode]);
+  }, [ttsEnabled]);
 
   const calculateTotal = (dets: Detection[]) =>
     dets.reduce((sum, d) => sum + (NOMINAL_MAP[d.label] || 0), 0);
@@ -173,7 +144,7 @@ const CameraView = () => {
     setIsDetecting(true);
     setAiError(null);
 
-    if (isBlindMode) speak("Mengambil foto dan mendeteksi uang");
+    speak("Mengambil foto dan mendeteksi uang");
 
     const imageData = captureFrame();
     if (!imageData) {
@@ -181,7 +152,7 @@ const CameraView = () => {
       setIsDetecting(false);
       setAiError("Gagal mengambil gambar dari kamera");
       haptic("error");
-      if (isBlindMode) speak("Gagal mengambil gambar");
+      speak("Gagal mengambil gambar");
       return;
     }
 
@@ -194,13 +165,6 @@ const CameraView = () => {
         const total = results.reduce((sum, d) => sum + (NOMINAL_MAP[d.label] || 0), 0);
         const formatted = formatRupiah(total);
         speak(`Terdeteksi uang sejumlah ${formatted}`);
-        if (isBlindMode) {
-          setTimeout(() => {
-            haptic("success");
-            const detail = results.map((d) => `${d.label.replace("k", " ribu")} rupiah`).join(", ");
-            speak(`Rincian: ${detail}`);
-          }, 3000);
-        }
       } else {
         haptic("error");
         speak("Tidak ada uang yang terdeteksi");
@@ -209,13 +173,13 @@ const CameraView = () => {
       const msg = err instanceof Error ? err.message : "Deteksi gagal";
       setAiError(msg);
       haptic("error");
-      if (isBlindMode) speak(`Error: ${msg}`);
+      speak(`Error: ${msg}`);
     } finally {
       setIsScanning(false);
       setIsDetecting(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasDetected, isScanning, isBlindMode, speak, haptic]);
+  }, [hasDetected, isScanning, speak, haptic]);
 
   const handleReset = useCallback(() => {
     setDetections([]);
@@ -224,89 +188,17 @@ const CameraView = () => {
     setIsScanning(false);
     setAiError(null);
     window.speechSynthesis.cancel();
-    if (isBlindMode) {
-      setTimeout(() => accessibilitySpeak("Siap untuk scan ulang. Katakan foto untuk mengambil gambar."), 300);
-    }
-  }, [isBlindMode, accessibilitySpeak]);
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsScanning(true);
-    setIsDetecting(true);
-    setAiError(null);
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const imageData = reader.result as string;
-      try {
-        const results = await detectWithAI(imageData);
-        setDetections(results);
-        setHasDetected(true);
-        if (results.length > 0) {
-          haptic("detection");
-          const total = results.reduce((sum, d) => sum + (NOMINAL_MAP[d.label] || 0), 0);
-          speak(`Terdeteksi uang sejumlah ${formatRupiah(total)}`);
-        } else {
-          haptic("error");
-          speak("Tidak ada uang yang terdeteksi");
-        }
-      } catch (err) {
-        setAiError(err instanceof Error ? err.message : "Deteksi gagal");
-        haptic("error");
-      } finally {
-        setIsScanning(false);
-        setIsDetecting(false);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const voiceCommands = useMemo(
-    () => [
-      { keywords: ["foto", "ambil", "capture", "scan", "pindai"], action: () => handleCapture() },
-      { keywords: ["ulangi", "ulang", "reset", "baru"], action: () => handleReset() },
-      { keywords: ["ganti kamera", "balik kamera", "switch"], action: () => switchCamera() },
-      {
-        keywords: ["suara", "mute", "diam"],
-        action: () => {
-          setTtsEnabled((prev) => !prev);
-          accessibilitySpeak("Suara " + (ttsEnabled ? "dimatikan" : "dinyalakan"));
-        },
-      },
-      {
-        keywords: ["bantuan", "help", "tolong"],
-        action: () => {
-          accessibilitySpeak(
-            "Perintah tersedia: foto untuk mengambil gambar, ulangi untuk scan ulang, ganti kamera untuk beralih kamera, suara untuk toggle audio"
-          );
-        },
-      },
-    ],
-    [handleCapture, handleReset, switchCamera, ttsEnabled, accessibilitySpeak]
-  );
-
-  useVoiceCommands({
-    enabled: isBlindMode && voiceActive,
-    commands: voiceCommands,
-    onUnrecognized: (t) => {
-      if (isBlindMode) accessibilitySpeak(`Perintah tidak dikenali: ${t}. Katakan bantuan untuk daftar perintah.`);
-    },
-  });
-
-  useEffect(() => {
-    if (isBlindMode) {
-      setVoiceActive(true);
-    }
-  }, [isBlindMode]);
+    setTimeout(() => speak("Siap untuk scan ulang. Tekan tombol bulat di tengah bawah layar."), 300);
+  }, [speak]);
 
   if (error) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-camera-bg px-6 text-center">
-        <Camera className={`${isBlindMode ? "w-24 h-24" : "w-16 h-16"} text-muted-foreground mb-4`} />
-        <p className={`text-primary-foreground ${sz.errorText} font-medium mb-2`}>{error}</p>
+        <Camera className="w-16 h-16 text-muted-foreground mb-4" />
+        <p className="text-primary-foreground text-lg font-medium mb-2">{error}</p>
         <button
           onClick={() => startCamera(facingMode)}
-          className={`mt-4 px-8 ${isBlindMode ? "py-5 text-xl" : "py-3 text-base"} rounded-xl bg-primary text-primary-foreground font-semibold touch-manipulation`}
+          className="mt-4 px-8 py-3 text-base rounded-xl bg-primary text-primary-foreground font-semibold touch-manipulation"
         >
           Coba Lagi
         </button>
@@ -319,10 +211,6 @@ const CameraView = () => {
       <canvas ref={canvasRef} className="hidden" />
 
       <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
-
-      {isBlindMode && (
-        <div className="absolute inset-0 z-10 pointer-events-none border-4 border-primary rounded-lg" />
-      )}
 
       <AnimatePresence>
         {(isScanning || hasDetected) && (
@@ -338,7 +226,7 @@ const CameraView = () => {
       <AnimatePresence>
         {isScanning && (
           <motion.div
-            className={`absolute left-0 right-0 ${isBlindMode ? "h-1" : "h-0.5"} bg-primary shadow-lg shadow-primary/50 z-20`}
+            className="absolute left-0 right-0 h-0.5 bg-primary shadow-lg shadow-primary/50 z-20"
             initial={{ top: "0%" }}
             animate={{ top: ["0%", "100%", "0%"] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -350,13 +238,13 @@ const CameraView = () => {
       <AnimatePresence>
         {isScanning && (
           <motion.div
-            className={`absolute top-20 left-1/2 -translate-x-1/2 z-30 ${isBlindMode ? "px-6 py-4" : "px-4 py-2"} rounded-full bg-primary/90 backdrop-blur-sm`}
+            className="absolute top-20 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-full bg-primary/90 backdrop-blur-sm"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <p className={`text-primary-foreground ${sz.statusText} font-semibold flex items-center gap-2`}>
-              <Loader2 className={`${isBlindMode ? "w-6 h-6" : "w-4 h-4"} animate-spin`} />
+            <p className="text-primary-foreground text-sm font-semibold flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
               Sedang mendeteksi...
             </p>
           </motion.div>
@@ -366,12 +254,12 @@ const CameraView = () => {
       <AnimatePresence>
         {aiError && (
           <motion.div
-            className={`absolute top-20 left-4 right-4 z-30 ${isBlindMode ? "px-6 py-5" : "px-4 py-3"} rounded-xl bg-destructive/90 backdrop-blur-sm`}
+            className="absolute top-20 left-4 right-4 z-30 px-4 py-3 rounded-xl bg-destructive/90 backdrop-blur-sm"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <p className={`text-destructive-foreground ${sz.statusText} font-medium`}>{aiError}</p>
+            <p className="text-destructive-foreground text-sm font-medium">{aiError}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -379,12 +267,12 @@ const CameraView = () => {
       <AnimatePresence>
         {hasDetected && detections.length === 0 && !aiError && (
           <motion.div
-            className={`absolute top-20 left-4 right-4 z-30 ${isBlindMode ? "px-6 py-5" : "px-4 py-3"} rounded-xl bg-muted/90 backdrop-blur-sm`}
+            className="absolute top-20 left-4 right-4 z-30 px-4 py-3 rounded-xl bg-muted/90 backdrop-blur-sm"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <p className={`text-foreground ${sz.statusText} font-medium text-center`}>
+            <p className="text-foreground text-sm font-medium text-center">
               Tidak ada uang Rupiah yang terdeteksi. Coba arahkan kamera ke uang kertas.
             </p>
           </motion.div>
@@ -392,72 +280,31 @@ const CameraView = () => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {hasDetected && detections.map((det, i) => <BoundingBox key={i} detection={det} isLarge={isBlindMode} />)}
+        {hasDetected && detections.map((det, i) => <BoundingBox key={i} detection={det} isLarge={false} />)}
       </AnimatePresence>
 
       {/* Top Controls */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-12 pb-4">
         <div className="flex items-center gap-2">
-          <div className={`${sz.logoSize} rounded-lg overflow-hidden`}>
+          <div className="w-8 h-8 rounded-lg overflow-hidden">
             <img src={logoMataHati} alt="Mata Hati" className="w-full h-full object-cover" />
           </div>
-          <span className={`text-primary-foreground font-display font-bold ${sz.brandText}`}>MATA HATI</span>
+          <span className="text-primary-foreground font-display font-bold text-sm">MATA HATI</span>
         </div>
         <div className="flex items-center gap-2">
-          {isBlindMode && (
-            <button
-              onClick={() => {
-                setVoiceActive((prev) => !prev);
-                accessibilitySpeak(voiceActive ? "Perintah suara dimatikan" : "Perintah suara diaktifkan");
-              }}
-              className={`${sz.topBtn} rounded-full ${voiceActive ? "bg-accent/80" : "bg-camera-overlay/60"} backdrop-blur-sm flex items-center justify-center touch-manipulation`}
-              aria-label={voiceActive ? "Matikan perintah suara" : "Aktifkan perintah suara"}
-            >
-              {voiceActive ? (
-                <Mic className={`${sz.topBtnIcon} text-accent-foreground`} />
-              ) : (
-                <MicOff className={`${sz.topBtnIcon} text-primary-foreground/50`} />
-              )}
-            </button>
-          )}
-
-          <button
-            onClick={toggleBlindMode}
-            className={`${sz.topBtn} rounded-full ${isBlindMode ? "bg-accent/80" : "bg-camera-overlay/60"} backdrop-blur-sm flex items-center justify-center touch-manipulation`}
-            aria-label={isBlindMode ? "Nonaktifkan mode aksesibilitas" : "Aktifkan mode aksesibilitas"}
-          >
-            <Accessibility className={`${sz.topBtnIcon} ${isBlindMode ? "text-accent-foreground" : "text-primary-foreground"}`} />
-          </button>
-
           <button
             onClick={() => setTtsEnabled(!ttsEnabled)}
-            className={`${sz.topBtn} rounded-full bg-camera-overlay/60 backdrop-blur-sm flex items-center justify-center touch-manipulation`}
+            className="w-10 h-10 rounded-full bg-camera-overlay/60 backdrop-blur-sm flex items-center justify-center touch-manipulation"
             aria-label={ttsEnabled ? "Matikan suara" : "Aktifkan suara"}
           >
             {ttsEnabled ? (
-              <Volume2 className={`${sz.topBtnIcon} text-primary-foreground`} />
+              <Volume2 className="w-5 h-5 text-primary-foreground" />
             ) : (
-              <VolumeX className={`${sz.topBtnIcon} text-primary-foreground/50`} />
+              <VolumeX className="w-5 h-5 text-primary-foreground/50" />
             )}
           </button>
         </div>
       </div>
-
-      {/* Voice command hint */}
-      <AnimatePresence>
-        {isBlindMode && voiceActive && !isScanning && !hasDetected && (
-          <motion.div
-            className="absolute top-28 left-4 right-4 z-30 px-5 py-3 rounded-xl bg-accent/20 backdrop-blur-sm border border-accent/40"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-          >
-            <p className="text-primary-foreground text-center font-semibold text-base">
-              🎤 Perintah suara aktif — Katakan "foto", "ulangi", atau "bantuan"
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Total Display */}
       <AnimatePresence>
@@ -465,7 +312,7 @@ const CameraView = () => {
           <TotalDisplay
             total={calculateTotal(detections)}
             formatted={formatRupiah(calculateTotal(detections))}
-            isLarge={isBlindMode}
+            isLarge={false}
           />
         )}
       </AnimatePresence>
@@ -475,10 +322,10 @@ const CameraView = () => {
         <div className="flex items-center justify-around">
           <button
             onClick={switchCamera}
-            className={`${sz.sideBtn} rounded-full bg-camera-overlay/60 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform touch-manipulation`}
+            className="w-12 h-12 rounded-full bg-camera-overlay/60 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform touch-manipulation"
             aria-label="Ganti kamera"
           >
-            <SwitchCamera className={`${sz.sideBtnIcon} text-primary-foreground`} />
+            <SwitchCamera className="w-5 h-5 text-primary-foreground" />
           </button>
 
           {!hasDetected ? (
@@ -488,16 +335,14 @@ const CameraView = () => {
               className="relative flex flex-col items-center touch-manipulation"
               aria-label="Ambil foto untuk deteksi uang"
             >
-              <div
-                className={`${sz.captureBtn} rounded-full border-4 border-primary flex items-center justify-center bg-primary/20 backdrop-blur-sm active:scale-90 transition-transform`}
-              >
+              <div className="w-20 h-20 rounded-full border-4 border-primary flex items-center justify-center bg-primary/20 backdrop-blur-sm active:scale-90 transition-transform">
                 {isScanning ? (
-                  <Loader2 className={`${isBlindMode ? "w-12 h-12" : "w-8 h-8"} text-primary animate-spin`} />
+                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 ) : (
-                  <div className={`${sz.captureBtnInner} rounded-full bg-primary`} />
+                  <div className="w-14 h-14 rounded-full bg-primary" />
                 )}
               </div>
-              <span className={`text-primary-foreground font-semibold ${sz.captureLabel} tracking-wide`}>
+              <span className="text-primary-foreground font-semibold text-xs mt-2 tracking-wide">
                 {isScanning ? "MENDETEKSI..." : "KETUK UNTUK FOTO"}
               </span>
             </button>
@@ -507,18 +352,16 @@ const CameraView = () => {
               className="relative flex flex-col items-center touch-manipulation"
               aria-label="Ulangi foto"
             >
-              <div
-                className={`${sz.captureBtn} rounded-full border-4 border-destructive flex items-center justify-center bg-destructive/20 backdrop-blur-sm active:scale-90 transition-transform`}
-              >
-                <RotateCcw className={`${isBlindMode ? "w-12 h-12" : "w-8 h-8"} text-destructive`} />
+              <div className="w-20 h-20 rounded-full border-4 border-destructive flex items-center justify-center bg-destructive/20 backdrop-blur-sm active:scale-90 transition-transform">
+                <RotateCcw className="w-8 h-8 text-destructive" />
               </div>
-              <span className={`text-primary-foreground font-semibold ${sz.captureLabel} tracking-wide`}>
+              <span className="text-primary-foreground font-semibold text-xs mt-2 tracking-wide">
                 ULANGI FOTO
               </span>
             </button>
           )}
 
-          <div className={`${sz.sideBtn} rounded-full`} />
+          <div className="w-12 h-12 rounded-full" />
         </div>
       </div>
     </div>
