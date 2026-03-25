@@ -12,7 +12,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
     window.speechSynthesis.cancel();
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(
-        "Selamat datang di Mata Hati. Aplikasi pendeteksi uang Rupiah. Tekan tombol besar Mulai Scan Uang di bagian paling bawah layar untuk membuka kamera. Setelah kamera terbuka, tekan tombol bulat besar di tengah bawah layar untuk mengambil foto dan mendeteksi uang."
+        "Selamat datang di Suara Hati. Aplikasi pendeteksi uang Rupiah. Tekan tombol besar Mulai Scan Uang di bagian paling bawah layar untuk membuka kamera. Setelah kamera terbuka, tekan tombol bulat besar di tengah bawah layar untuk mengambil foto dan mendeteksi uang."
       );
       utterance.lang = "id-ID";
       utterance.rate = 0.75;
@@ -61,7 +61,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           className="mb-8"
         >
           <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-lg">
-            <img src={logoMataHati} alt="Mata Hati Logo" className="w-full h-full object-cover" />
+            <img src={logoMataHati} alt="Suara Hati Logo" className="w-full h-full object-cover" />
           </div>
         </motion.div>
 
@@ -71,7 +71,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          Selamat Datang di <span className="text-primary">Mata Hati</span>
+          Selamat Datang di <span className="text-primary">Suara Hati</span>
         </motion.h1>
 
         <motion.p

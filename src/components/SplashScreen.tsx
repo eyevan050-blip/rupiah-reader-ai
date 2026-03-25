@@ -40,7 +40,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
         transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
       >
         <div className="w-28 h-28 rounded-2xl overflow-hidden shadow-2xl border-2 border-primary-foreground/30">
-          <img src={logoMataHati} alt="Mata Hati Logo" className="w-full h-full object-cover" />
+           <img src={logoMataHati} alt="Suara Hati Logo" className="w-full h-full object-cover" />
         </div>
       </motion.div>
 
@@ -52,7 +52,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
         transition={{ delay: 0.8, duration: 0.6 }}
       >
         <h1 className="font-display font-black text-3xl tracking-wider text-primary-foreground text-shadow-glow">
-          MATA HATI
+          SUARA HATI
         </h1>
         <motion.p
           className="text-primary-foreground/70 text-sm mt-2 font-medium tracking-wide"
