@@ -12,7 +12,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
     window.speechSynthesis.cancel();
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(
-        "Selamat datang di Mata Hati. Aplikasi pendeteksi uang Rupiah. Tekan tombol Mulai Scan Uang di bagian bawah layar untuk memulai."
+        "Selamat datang di Mata Hati. Aplikasi pendeteksi uang Rupiah. Tekan tombol besar Mulai Scan Uang di bagian paling bawah layar untuk membuka kamera. Setelah kamera terbuka, tekan tombol bulat besar di tengah bawah layar untuk mengambil foto dan mendeteksi uang."
       );
       utterance.lang = "id-ID";
       utterance.rate = 0.75;
