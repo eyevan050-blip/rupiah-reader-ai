@@ -287,9 +287,9 @@ const CameraView = () => {
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 pt-12 pb-4">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg overflow-hidden">
-            <img src={logoMataHati} alt="Mata Hati" className="w-full h-full object-cover" />
+            <img src={logoMataHati} alt="Suara Hati" className="w-full h-full object-cover" />
           </div>
-          <span className="text-primary-foreground font-display font-bold text-sm">MATA HATI</span>
+          <span className="text-primary-foreground font-display font-bold text-sm">SUARA HATI</span>
         </div>
         <div className="flex items-center gap-2">
           <button
